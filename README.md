@@ -18,6 +18,7 @@
   - [Compatibilities](#compatibilities)
 - [Roles](#roles)
 - [Known Issues](#known-issues)
+- [Some Notes:](#some-notes)
 
 # About
 
@@ -93,3 +94,12 @@ XX
 # Known Issues
 
 None
+
+
+# Some Notes:
+
+- Similarly to Remix you can also debug a single tx for the details of the execution by running `forge test --debug testMulRevert
+- Run FV with halmos `halmos --function check_testMulWadUpFuzz_halmos --solver-timeout-assertion 0` sets timeout to never
+- command to use the soldity compiler for symbolic execution : `solc --model-checker-engine chc --model-checker-targets overflow SmallSol.sol`
+- For asserts (which needs to add asserts in the contract) : `solc --model-checker-engine chc --model-checker-targets asset SmallSol.sol`
+- More details in https://secure-contracts.com/

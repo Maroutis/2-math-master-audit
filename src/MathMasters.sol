@@ -38,6 +38,9 @@ library MathMasters {
         assembly {
             // Equivalent to `require(y == 0 || x <= type(uint256).max / y)`.
             if mul(y, gt(x, div(not(0), y))) {
+                // @audit - low : This will revert with a blank message
+                // @audit - why are you overriding the free memory pointer ??
+                // @audit - wrong function selector !! 0xa56044f7
                 mstore(0x40, 0xbac65e5b) // `MathMasters__MulWadFailed()`.
                 revert(0x1c, 0x04)
             }
@@ -51,10 +54,11 @@ library MathMasters {
         assembly {
             // Equivalent to `require(y == 0 || x <= type(uint256).max / y)`.
             if mul(y, gt(x, div(not(0), y))) {
+                // @audit - this is wrong fo a bunch of reasons
                 mstore(0x40, 0xbac65e5b) // `MathMasters__MulWadFailed()`.
                 revert(0x1c, 0x04)
             }
-            if iszero(sub(div(add(z, x), y), 1)) { x := add(x, 1) }
+            // if iszero(sub(div(add(z, x), y), 1)) { x := add(x, 1) } // ((0 + x)/y) - 1
             z := add(iszero(iszero(mod(mul(x, y), WAD))), div(mul(x, y), WAD))
         }
     }
@@ -71,15 +75,15 @@ library MathMasters {
 
             // This segment is to get a reasonable initial estimate for the Babylonian method. With a bad
             // start, the correct # of bits increases ~linearly each iteration instead of ~quadratically.
-            let r := shl(7, lt(87112285931760246646623899502532662132735, x))
-            r := or(r, shl(6, lt(4722366482869645213695, shr(r, x))))
-            r := or(r, shl(5, lt(1099511627775, shr(r, x))))
+            let r := shl(7, lt(87112285931760246646623899502532662132735, x)) // shift r left by 7 if x > 2**136 - 1
+            r := or(r, shl(6, lt(4722366482869645213695, shr(r, x)))) // 2**72 - 1
+            r := or(r, shl(5, lt(1099511627775, shr(r, x)))) // 2**40 - 1
             // Correct: 16777215 0xffffff
-            r := or(r, shl(4, lt(16777002, shr(r, x))))
+            r := or(r, shl(4, lt(16777002, shr(r, x)))) // 16777002 is a weird number 2**24 - 1 = 16777215
             z := shl(shr(1, r), z)
 
             // There is no overflow risk here since `y < 2**136` after the first branch above.
-            z := shr(18, mul(z, add(shr(r, x), 65536))) // A `mul()` is saved from starting `z` at 181.
+            z := shr(18, mul(z, add(shr(r, x), 65536))) // A `mul()` is saved from starting `z` at 181. 65536 = 2**16
 
             // Given the worst case multiplicative error of 2.84 above, 7 iterations should be enough.
             z := shr(1, add(z, div(x, z)))
